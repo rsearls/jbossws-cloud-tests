@@ -1,2 +1,2 @@
-# jbossws-cxf-cloud-tests
+# jbossws-cloud-tests
 POC jbossws-cxf cloud testing using Intersmash

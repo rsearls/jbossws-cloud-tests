@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2014, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.jboss.ws.cloud</groupId>
+    <artifactId>jbossws-cloud-parent</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>hello-bootable</artifactId>
+  <packaging>pom</packaging>
+
+  <name>hello-appsint Test</name>
+  <description>Learning app for using Intersmash</description>
+
+  <modules>
+    <module>hello</module>
+  </modules>
+
+  <properties>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- By default, the following prop is empty, stating that the build profile is none -->
+    <intersmash.deployments.wildfly.build.profile></intersmash.deployments.wildfly.build.profile>
+    <version.microprofile-config-api>1.3</version.microprofile-config-api>
+    <bom.wildfly-ee.version>29.0.0.Final</bom.wildfly-ee.version>
+    <wildfly-maven-plugin.version>4.0.0.Final</wildfly-maven-plugin.version>
+    <version.wildfly.feature-pack>30.0.0.Beta1-SNAPSHOT</version.wildfly.feature-pack>
+    <version.wildfly-cloud-galleon-pack>2.0.0.Final</version.wildfly-cloud-galleon-pack>
+    <version.jbossws-cxf-feature-pack>7.0.0-SNAPSHOT</version.jbossws-cxf-feature-pack>
+    <version.maven-war-plugin>3.3.2</version.maven-war-plugin>
+    <version.wildfly-jar-maven-plugin>10.0.0.Final</version.wildfly-jar-maven-plugin>
+    <version.jakarta.inject-api>1.0.5</version.jakarta.inject-api>
+    <version.jakarta.jakartaee-api>10.0.0</version.jakarta.jakartaee-api>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- Lock all the provided Jakarta dependencies to match the WildFly/EAP version -->
+      <dependency>
+        <groupId>org.wildfly.bom</groupId>
+        <artifactId>wildfly-ee</artifactId>
+        <version>${bom.wildfly-ee.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- Used by intersmash-deployments referenced in demos, i.e. bootable-jar app-->
+      <dependency>
+        <groupId>org.eclipse.microprofile.config</groupId>
+        <artifactId>microprofile-config-api</artifactId>
+        <version>${version.microprofile-config-api}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>jakarta.platform</groupId>
+        <artifactId>jakarta.jakartaee-api</artifactId>
+        <version>${version.jakarta.jakartaee-api}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>jakarta.inject</groupId>
+        <artifactId>jakarta.inject-api</artifactId>
+        <version>${version.jakarta.inject-api}</version>
+        <scope>provided</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.wildfly.plugins</groupId>
+          <artifactId>wildfly-maven-plugin</artifactId>
+          <version>${wildfly-maven-plugin.version}</version>
+          <configuration>
+            <filename>ROOT.war</filename>
+            <!-- some tests check for the provisioned galleon layers -->
+            <record-provisioning-state>true</record-provisioning-state>
+            <feature-packs>
+              <feature-pack>
+                <location>org.wildfly:wildfly-galleon-pack:${version.wildfly.feature-pack}</location>
+              </feature-pack>
+              <feature-pack>org.wildfly.cloud:wildfly-cloud-galleon-pack:${version.wildfly-cloud-galleon-pack}</feature-pack>
+              <feature-pack>
+                <location>org.jboss.ws.cxf:jbossws-cxf-feature-pack:${version.jbossws-cxf-feature-pack}</location>
+              </feature-pack>
+            </feature-packs>
+            <!-- A list of Galleon layers to provision. -->
+            <layers>
+              <layer>jaxrs</layer>
+              <layer>bean-validation</layer>
+              <layer>management</layer>
+              <layer>webservices</layer>
+            </layers>
+            <galleon-options>
+              <!-- this flag is super necessary: otherwise wildfly-maven-plugin and
+                   wildfly-jar-maven-plugin would collide  -->
+              <jboss-fork-embedded>true</jboss-fork-embedded>
+            </galleon-options>
+          </configuration>
+          <executions>
+            <execution>
+              <goals>
+                <goal>package</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+        <!--
+            All EAP 8 deployments are setting the WAR file name to ROOT, according to the parent POM
+            maven-war-plugin configuration
+        -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-war-plugin</artifactId>
+          <version>${version.maven-war-plugin}</version>
+          <configuration>
+            <warName>ROOT</warName>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.wildfly.plugins</groupId>
+          <artifactId>wildfly-jar-maven-plugin</artifactId>
+          <version>${version.wildfly-jar-maven-plugin}</version>
+          <!-- this is common config used by child modules -->
+          <configuration>
+            <feature-packs>
+              <feature-pack>
+                <location>org.wildfly:wildfly-galleon-pack:${version.wildfly.feature-pack}</location>
+              </feature-pack>
+            </feature-packs>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>bootable-jar-openshift</id>
+      <activation>
+        <file>
+          <exists>maven/bootable-jar-openshift</exists>
+        </file>
+      </activation>
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <groupId>org.wildfly.plugins</groupId>
+              <artifactId>wildfly-jar-maven-plugin</artifactId>
+              <!-- Two package goals - OpenShift and bare metal but we still need to
+                   ensure that artifacts are installed correctly into maven repo -->
+              <executions>
+                <execution>
+                  <!-- Create bootable jar for cloud environment - use already defined
+                       configuration and add filename & cloud support -->
+                  <id>bootable-openshift</id>
+                  <configuration>
+                    <output-file-name>${project.build.finalName}-bootable-openshift.jar</output-file-name>
+                    <!-- Enable cloud support for OCP -->
+                    <cloud/>
+                  </configuration>
+                  <goals>
+                    <goal>package</goal>
+                  </goals>
+                </execution>
+              </executions>
+            </plugin>
+            <plugin>
+              <!-- Install artifacts created by wildfly-jar-maven-plugin plugin
+                   manually since the plugin installs it under same name -->
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-install-plugin</artifactId>
+              <executions>
+                <execution>
+                  <id>install-bootable-jar-openshift</id>
+                  <phase>install</phase>
+                  <goals>
+                    <goal>install-file</goal>
+                  </goals>
+                  <configuration>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>${project.artifactId}</artifactId>
+                    <version>${project.version}</version>
+                    <packaging>jar</packaging>
+                    <classifier>bootable-openshift</classifier>
+                    <file>${project.build.directory}/${project.build.finalName}-bootable-openshift.jar
+                    </file>
+                  </configuration>
+                </execution>
+              </executions>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+      </build>
+    </profile>
+    <profile>
+      <id>bootable-jar-baremetal</id>
+      <activation>
+        <file>
+          <exists>maven/bootable-jar-baremetal</exists>
+        </file>
+      </activation>
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <groupId>org.wildfly.plugins</groupId>
+              <artifactId>wildfly-jar-maven-plugin</artifactId>
+              <!-- Bare metal but we still need to ensure that artifacts are installed
+                   correctly into maven repo -->
+              <executions>
+                <execution>
+                  <!-- Create bootable jar for bare metal environment - use already
+                       defined configuration and add filename & cloud support -->
+                  <id>bootable-baremetal</id>
+                  <configuration>
+                    <output-file-name>${project.build.finalName}-bootable-baremetal.jar</output-file-name>
+                  </configuration>
+                  <goals>
+                    <goal>package</goal>
+                  </goals>
+                </execution>
+              </executions>
+            </plugin>
+            <plugin>
+              <!-- Install artifacts created by wildfly-jar-maven-plugin plugin
+                   manually since the plugin installs it under same name -->
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-install-plugin</artifactId>
+              <executions>
+                <execution>
+                  <id>install-bootable-jar-baremetal</id>
+                  <phase>install</phase>
+                  <goals>
+                    <goal>install-file</goal>
+                  </goals>
+                  <configuration>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>${project.artifactId}</artifactId>
+                    <version>${project.version}</version>
+                    <packaging>jar</packaging>
+                    <classifier>bootable-baremetal</classifier>
+                    <file>${project.build.directory}/${project.build.finalName}-bootable-baremetal.jar
+                    </file>
+                  </configuration>
+                </execution>
+              </executions>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+      </build>
+    </profile>
+  </profiles>
+  
+</project>
