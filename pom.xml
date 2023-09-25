@@ -50,6 +50,7 @@
     </licenses>
 
     <modules>
+        <!--##  <module>hello-bootable</module> rls ##-->
     </modules>
 
     <properties>
